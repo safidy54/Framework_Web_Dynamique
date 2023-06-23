@@ -3,10 +3,18 @@
 
     <servlet>
         <servlet-name>FrontServlet</servlet-name>
-        <servlet-class>etu2025.framework.servlet.FrontServlet</servlet-class>
+        <servlet-class>etu1802.framework.servlet.FrontServlet</servlet-class>
         <init-param>
             <param-name>model-package</param-name>
-            <param-value>etu2025.model</param-value>
+            <param-value>etu1802.model</param-value>
+        </init-param>
+        <init-param>
+            <param-name>session-name-isconnected</param-name>
+            <param-value>isconnected</param-value>
+        </init-param>
+        <init-param>
+            <param-name>session-name-profile</param-name>
+            <param-value>profile</param-value>
         </init-param>
         <multipart-config>
             <max-file-size>5242880</max-file-size>

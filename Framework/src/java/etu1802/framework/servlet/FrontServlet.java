@@ -7,6 +7,7 @@ package etu1802.framework.servlet;
 import etu1802.framework.FileUpload;
 import etu1802.framework.Mapping;
 import etu1802.framework.ModelView;
+import etu1802.framework.annotation.auth;
 import etu1802.framework.annotation.url;
 import etu1802.framework.util.Utils;
 import jakarta.servlet.RequestDispatcher;
@@ -17,8 +18,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -37,7 +38,9 @@ public class FrontServlet extends HttpServlet {
     private HashMap<String, Mapping> MappingUrls;
     private ArrayList<Class<?>> list_class;
     private HashMap<String, Object> singleton;
-
+    private String isConnected;
+    private String profile;
+    
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config); 
@@ -45,6 +48,8 @@ public class FrontServlet extends HttpServlet {
         setListClass(new ArrayList<>());
         setSingleton(new HashMap<>());
         setMappingUrls(package_model);
+        setIsConnected(config.getInitParameter("session-name-isconnected"));
+        setProfile(config.getInitParameter("session-name-profile"));
     }
     
      
@@ -63,9 +68,6 @@ public class FrontServlet extends HttpServlet {
         try ( PrintWriter out = response.getWriter()) {
             out.println("<h1>Servlet Frontservlet at " + request.getContextPath() + "</h1>");
             out.println("<h1>URL at " + getURL(request) + "</h1>");
-            for (Class<?> list_clas : list_class) {
-                out.println(list_clas.getName());
-            }
             String url = getURL(request);
             Class class_controller = findController(url);
             Object controller = treatSingleton(class_controller);
@@ -73,6 +75,31 @@ public class FrontServlet extends HttpServlet {
             dispatch(request, response, model_view);
         } catch (Exception ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private boolean treatAuth(HttpServletRequest request, Method controller) {
+        auth a = controller.getAnnotation(auth.class);
+        if( a != null) {
+            HttpSession session = request.getSession();
+            String profile = (String) session.getAttribute(getProfile());
+            boolean isConnected = (boolean) session.getAttribute(getIsConnected());
+            System.out.println(a.value() + "   <" + profile + ">  <" + getProfile() + ">  <" + getIsConnected());
+            if (a.value().equals("")){
+                return isConnected;
+            } else {
+                return isConnected && a.value().equals(profile);
+            }
+        }
+        return true;
+    }
+    
+    private void treatSession(HttpServletRequest request, ModelView mv) {
+        for (Map.Entry<String, Object> entry : mv.getSession().entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            Object val = entry.getValue();
+            HttpSession session = request.getSession();
+            session.setAttribute(key, val);
         }
     }
     
@@ -183,6 +210,7 @@ public class FrontServlet extends HttpServlet {
     
     private void dispatch(HttpServletRequest request, HttpServletResponse response, ModelView model_view) throws ServletException, IOException {
         RequestDispatcher dispatcher = request.getRequestDispatcher(model_view.getView());
+        treatSession(request, model_view);
         for (Map.Entry<String, Object> entry : model_view.getData().entrySet()) {
             String key = String.valueOf(entry.getKey());
             Object val = entry.getValue();
@@ -235,6 +263,9 @@ public class FrontServlet extends HttpServlet {
         Map<String, String[]> parameters = request.getParameterMap();
         Class<?> controller_class = findController(url);
         Method controller_method = findMethodController(controller_class, url);
+        if (!treatAuth(request, controller_method)) {
+            throw new Exception("Method impossible d'acces");
+        }
         Parameter[] controller_method_parameters = controller_method.getParameters();
         Object[] controller_parameters = new Object[controller_method_parameters.length];
         for (int i=0; i<controller_method_parameters.length; i++) {
@@ -314,5 +345,18 @@ public class FrontServlet extends HttpServlet {
     public void setSingleton(HashMap<String, Object> singleton) {
         this.singleton = singleton;
     }
+    public String getIsConnected() {
+        return isConnected;
+    }
+    public void setIsConnected(String isConnected) {
+        this.isConnected = isConnected;
+    }
+    public String getProfile() {
+        return profile;
+    }
+    public void setProfile(String profile) {
+        this.profile = profile;
+    }
+    
     
 }
