@@ -2,10 +2,11 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package etu1802.framework.util;
+package etu2025.framework.util;
 
-import etu1802.framework.Mapping;
-import etu1802.framework.annotation.url;
+import etu2025.framework.Mapping;
+import etu2025.framework.annotation.scope;
+import etu2025.framework.annotation.url;
 import jakarta.servlet.http.Part;
 import java.io.File;
 import java.lang.reflect.Array;
@@ -20,10 +21,17 @@ import java.util.List;
 
 /**
  *
- * @author safidy
+ * @author tiavi
  */
 public class Utils {
 
+    
+    
+    public static boolean isSingleton(Class<?> c) {
+        scope sc = c.getAnnotation(scope.class);
+        return sc != null && "singleton".equals(sc.value());
+    }
+    
     public static List<Class> getClassFrom(String packages) throws Exception {
         String path = packages.replaceAll("[.]", "/");
         URL packagesUrl = Thread.currentThread().getContextClassLoader().getResource(path);

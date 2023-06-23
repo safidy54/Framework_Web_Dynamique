@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
@@ -35,12 +36,14 @@ import java.util.logging.Logger;
 public class FrontServlet extends HttpServlet {
     private HashMap<String, Mapping> MappingUrls;
     private ArrayList<Class<?>> list_class;
+    private HashMap<String, Object> singleton;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config); 
         String package_model = config.getInitParameter("model-package");
         setListClass(new ArrayList<>());
+        setSingleton(new HashMap<>());
         setMappingUrls(package_model);
     }
     
@@ -60,15 +63,32 @@ public class FrontServlet extends HttpServlet {
         try ( PrintWriter out = response.getWriter()) {
             out.println("<h1>Servlet Frontservlet at " + request.getContextPath() + "</h1>");
             out.println("<h1>URL at " + getURL(request) + "</h1>");
+            for (Class<?> list_clas : list_class) {
+                out.println(list_clas.getName());
+            }
             String url = getURL(request);
-            Object model_view = executeController(request, url);
+            Class class_controller = findController(url);
+            Object controller = treatSingleton(class_controller);
+            Object model_view = executeController(request, url, controller);
             dispatch(request, response, model_view);
         } catch (Exception ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    private void set(HttpServletRequest request, Object o) throws NoSuchMethodException, Exception {
+    private Object treatSingleton(Class<?> c) throws InstantiationException, IllegalAccessException {
+        if (Utils.isSingleton(c)) {
+            if (!getSingleton().containsKey(c.getName())) {
+                getSingleton().put(c.getName(), c.newInstance());
+            }
+            return getSingleton().get(c.getName());
+        }
+        return c.newInstance();
+    }
+
+    
+    private void setAll(HttpServletRequest request, Object o) throws NoSuchMethodException, Exception {
+        //set_init(o);
         HashMap<String, Method> setters = Utils.getAllSetters(o.getClass());
         Map<String, String[]> parameters = request.getParameterMap();
         for (Map.Entry<String, Method> entry : setters.entrySet()) {
@@ -85,12 +105,57 @@ public class FrontServlet extends HttpServlet {
                     fu.setBytes(FileUpload.getBytesFromPart(filePart));
                     setter_parameter_object = fu;
                 } catch (Exception e) {
-                    e.printStackTrace();
                 }
             } else {
                 setter_parameter_object = Utils.cast(parameter, setter_parameter[0]);
             }
             setter.invoke(o, setter_parameter_object);
+        }
+    }
+    
+    private void setInit(Object o) throws NoSuchMethodException, Exception {
+        HashMap<String, Method> setters = Utils.getAllSetters(o.getClass());
+        for (Map.Entry<String, Method> entry : setters.entrySet()) {
+            Method setter = (Method)entry.getValue();
+            String[] parameter = null;
+            Class<?>[] setter_parameter = setter.getParameterTypes();
+            Object setter_parameter_object = null;
+            if (setter_parameter[0] == FileUpload.class) {
+                try {
+                    FileUpload fu = new FileUpload();
+                    setter_parameter_object = fu;
+                } catch (Exception e) {
+                }
+            } else {
+                setter_parameter_object = Utils.cast(parameter, setter_parameter[0]);
+            }
+            setter.invoke(o, setter_parameter_object);
+        }
+    }
+    
+    private void set(HttpServletRequest request, Object o) throws NoSuchMethodException, Exception {
+        setInit(o);
+        HashMap<String, Method> setters = Utils.getAllSetters(o.getClass());
+        Map<String, String[]> parameters = request.getParameterMap();
+        for (Map.Entry<String, String[]> entry : parameters.entrySet()) {
+            try {
+                String key = String.valueOf(entry.getKey());
+                Method setter = (Method)setters.get(key);
+                String[] parameter = (String[]) entry.getValue();
+                Class<?>[] setter_parameter = setter.getParameterTypes();
+                Object setter_parameter_object = null;
+                if (setter_parameter[0] == FileUpload.class) {
+                        FileUpload fu = new FileUpload();
+                        Part filePart = getPart(request, key);
+                        fu.setName(FileUpload.getFileName(filePart));
+                        fu.setBytes(FileUpload.getBytesFromPart(filePart));
+                        setter_parameter_object = fu;
+                } else {
+                    setter_parameter_object = Utils.cast(parameter, setter_parameter[0]);
+                }
+                setter.invoke(o, setter_parameter_object);
+            } catch (Exception e) {
+            }
         }
     }
     
@@ -105,9 +170,8 @@ public class FrontServlet extends HttpServlet {
     }
     
     private void dispatch(HttpServletRequest request, HttpServletResponse response, Object model_view) throws Exception {
-        if (model_view instanceof ModelView) {
+        if (model_view instanceof ModelView modelView) {
             try {
-                Object modelView = null;
                 dispatch(request, response, modelView);
                 return;
             } catch (ServletException | IOException e) {
@@ -166,7 +230,7 @@ public class FrontServlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
     
-    private Object executeController(HttpServletRequest request, String url) throws Exception {
+    private Object executeController(HttpServletRequest request, String url, Object controller) throws Exception {
         Object model_view = null;
         Map<String, String[]> parameters = request.getParameterMap();
         Class<?> controller_class = findController(url);
@@ -177,11 +241,11 @@ public class FrontServlet extends HttpServlet {
             Object controller_parameter = Utils.cast(parameters.get(controller_method_parameters[i].getName()), controller_method_parameters[i].getType());
             controller_parameters[i] = controller_parameter;
         }
-        Object controller = controller_class.newInstance();
         set(request,controller );
         model_view = controller_method.invoke(controller, controller_parameters);
         return model_view;
     }
+    
     
     private Method findMethodController(Class<?> c, String url) throws Exception {
         for (Method m : c.getDeclaredMethods()) {
@@ -191,13 +255,7 @@ public class FrontServlet extends HttpServlet {
         }
         throw new Exception("Method not found");
     }
-        
-    private Object instanceController(String url) throws Exception {
-        Class c = findController(url);
-        Object o = c.newInstance();
-        return o;
-    }
-    
+
     private Class findController(String url) throws Exception {
         List<Class<?>> lc = getListClass();
         for (Class<?> c : lc) {
@@ -249,6 +307,12 @@ public class FrontServlet extends HttpServlet {
     }
     public void setListClass(ArrayList<Class<?>> list_class) {
         this.list_class = list_class;
+    }
+    public HashMap<String, Object> getSingleton() {
+        return singleton;
+    }
+    public void setSingleton(HashMap<String, Object> singleton) {
+        this.singleton = singleton;
     }
     
 }

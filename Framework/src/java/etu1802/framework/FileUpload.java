@@ -11,7 +11,7 @@ import java.io.InputStream;
 
 /**
  *
- * @author tiavi
+ * @author safidy
  */
 public class FileUpload {
     String name;
