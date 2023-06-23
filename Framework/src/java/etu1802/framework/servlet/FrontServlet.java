@@ -105,6 +105,13 @@ public class FrontServlet extends HttpServlet {
                 }
                 dispatcher.forward(request, response);
             }
+            out.println(c.getName() + "<br>");
+
+            Object temp = set(request, c);
+            Method me = getMethodFromUrl(getUrl(request));
+
+            Object obj = me.invoke(temp, (Object) null);    
+            prepareDispatch(request, response, obj);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -187,4 +194,38 @@ public class FrontServlet extends HttpServlet {
         throw new Exception("Class not found");
     }
 
+    public Object set(HttpServletRequest request, Class c) throws Exception {
+
+            HashMap<String, Method> setter = Util.getSetters(c);
+            Map<String, String[]> param = request.getParameterMap();
+
+            Object temp = c.newInstance();
+//            
+            for (Map.Entry<String, String[]> entry : param.entrySet()) {
+                String key = entry.getKey();
+                String[] parameter = entry.getValue();
+                if (!setter.containsKey(key)) {
+                    continue;
+                }
+
+                Method setTemp = setter.get(key);
+                Class<?>[] setParam = setTemp.getParameterTypes();
+                setTemp.invoke(temp, (Object) Util.CastTo(parameter[0],  setParam[0]));
+            }
+            return temp;
+    }
+    
+    public void prepareDispatch(HttpServletRequest request, HttpServletResponse response, Object o) throws ServletException, IOException {
+         if (o instanceof ModelView) {
+                ModelView mv = (ModelView)o;
+                mv.listAll();
+                RequestDispatcher dispatcher = request.getRequestDispatcher(mv.getView());
+                for (Map.Entry<String, Object> entry : mv.getData().entrySet()) {
+                    String key = String.valueOf(entry.getKey());
+                    Object val = entry.getValue();
+                    request.setAttribute(key, val);
+                }
+                dispatcher.forward(request, response);
+            }
+    }
 }

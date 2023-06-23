@@ -6,6 +6,7 @@
 package etu1802.framework;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -31,7 +32,7 @@ public class ModelView {
 
     public HashMap<String, Object> getData() {
         return data;
-    }
+    } 
 
     public void setData(HashMap<String, Object> data) {
         this.data = data;
@@ -39,5 +40,13 @@ public class ModelView {
     
     public void addItem(String key, Object value) {
         getData().put(key, value);
+    }
+    
+    public void listAll() {
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            Object key = entry.getKey();
+            Object val = entry.getValue();
+            System.out.println(key + "====" + val);
+        }
     }
 }
