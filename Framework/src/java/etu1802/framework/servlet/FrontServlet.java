@@ -1,120 +1,130 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 package etu1802.framework.servlet;
 
+import etu1802.framework.FileUpload;
 import etu1802.framework.Mapping;
 import etu1802.framework.ModelView;
-import etu1802.framework.annotation.Url;
-import etu1802.framework.utils.Util;
+import etu1802.framework.annotation.url;
+import etu1802.framework.util.Utils;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletConfig;
 import java.io.IOException;
 import java.io.PrintWriter;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
- * @author Safidy
+ * @author safidy
  */
-@WebServlet(name = "FrontServlet", urlPatterns = {"/FrontServlet"})
 public class FrontServlet extends HttpServlet {
-    HashMap<String, Mapping> mappingUrls;
-    private ArrayList<Class> classList;
-
-    public HashMap<String, Mapping> getMappingUrls() {
-        return mappingUrls;
-    }
-
-    public void setMappingUrls(HashMap<String, Mapping> mappingUrls) {
-        this.mappingUrls = mappingUrls;
-    }
-    
-    public void setMappingUrls(String path) {
-        try {
-            List<Class> lc = Util.getClassFrom(path);
-            setMappingUrls(new HashMap<String, Mapping>());
-            for (Class c : lc) {
-                for (Method m : c.getDeclaredMethods()) {
-                    Url u = m.getAnnotation(Url.class);
-                    if (u  != null) {
-                       getMappingUrls().put(u.value() , new Mapping(c.getSimpleName(), m.getName()));
-                    }
-                }
-                getClassList().add(c);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-    
-    public ArrayList<Class> getClassList() {
-        return classList;
-    }
-
-    public void setClassList(ArrayList<Class> classList) {
-        this.classList = classList;
-    }
+    private HashMap<String, Mapping> MappingUrls;
+    private ArrayList<Class<?>> list_class;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        super.init();
-        String packageModel = config.getInitParameter("model-package");
-        setClassList(new ArrayList<Class>());
-        setMappingUrls(packageModel);
+        super.init(config); 
+        String package_model = config.getInitParameter("model-package");
+        setListClass(new ArrayList<>());
+        setMappingUrls(package_model);
     }
-
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    
+     
+    /**
+     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
+     * methods.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        PrintWriter out = response.getWriter();
-
-        try  {
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet FrontServlet</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1> <u>Servlet FrontServlet</u> at " + request.getContextPath() + "</h1>");
-            out.println("<h1><u>RequestURI</u> at " + request.getRequestURI()+ "</h1>");
-            out.println("<h1><u> Url </u>at " + getUrl(request) + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-            Method m = getMethodFromUrl(getUrl(request));
-            Class c = getClassFromUrl(getUrl(request));
-            Object o = m.invoke(c.newInstance(), null);
-            out.println(o);
-            if (o instanceof ModelView) {
-                ModelView mv = (ModelView)o;
-                RequestDispatcher dispatcher = request.getRequestDispatcher(mv.getView());
-                for (Map.Entry<String, Object> entry : mv.getData().entrySet()) {
-                    String key = String.valueOf(entry.getKey());
-                    Object val = entry.getValue();
-                    request.setAttribute(key, val);
-                }
-                dispatcher.forward(request, response);
-            }
-            out.println(c.getName() + "<br>");
-
-            Object temp = set(request, c);
-            Method me = getMethodFromUrl(getUrl(request));
-
-            Object obj = me.invoke(temp, (Object) null);    
-            prepareDispatch(request, response, obj);
-        } catch (Exception e) {
-            e.printStackTrace();
+        try ( PrintWriter out = response.getWriter()) {
+            out.println("<h1>Servlet Frontservlet at " + request.getContextPath() + "</h1>");
+            out.println("<h1>URL at " + getURL(request) + "</h1>");
+            String url = getURL(request);
+            Object model_view = executeController(request, url);
+            dispatch(request, response, model_view);
+        } catch (Exception ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private void set(HttpServletRequest request, Object o) throws NoSuchMethodException, Exception {
+        HashMap<String, Method> setters = Utils.getAllSetters(o.getClass());
+        Map<String, String[]> parameters = request.getParameterMap();
+        for (Map.Entry<String, Method> entry : setters.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            Method setter = (Method)entry.getValue();
+            String[] parameter = parameters.get(key);
+            Class<?>[] setter_parameter = setter.getParameterTypes();
+            Object setter_parameter_object = null;
+            if (setter_parameter[0] == FileUpload.class) {
+                try {
+                    FileUpload fu = new FileUpload();
+                    Part filePart = getPart(request, key);
+                    fu.setName(FileUpload.getFileName(filePart));
+                    fu.setBytes(FileUpload.getBytesFromPart(filePart));
+                    setter_parameter_object = fu;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                setter_parameter_object = Utils.cast(parameter, setter_parameter[0]);
+            }
+            setter.invoke(o, setter_parameter_object);
+        }
+    }
+    
+    private Part getPart(HttpServletRequest request, String key) throws IOException, ServletException, Exception {
+        Collection<Part> part_collection = request.getParts();
+        for (Part part : part_collection) {
+            if (part.getName().equals(key)) {
+                return part;
+            }
+        }
+        throw new Exception("¨Part don't exist");
+    }
+    
+    private void dispatch(HttpServletRequest request, HttpServletResponse response, Object model_view) throws Exception {
+        if (model_view instanceof ModelView) {
+            try {
+                Object modelView = null;
+                dispatch(request, response, modelView);
+                return;
+            } catch (ServletException | IOException e) {
+                throw e;
+            }
+        }
+        throw new Exception("The controller's method must return a ModelView");
+    }
+    
+    private void dispatch(HttpServletRequest request, HttpServletResponse response, ModelView model_view) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher(model_view.getView());
+        for (Map.Entry<String, Object> entry : model_view.getData().entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            Object val = entry.getValue();
+            request.setAttribute(key, val);
+        }
+        dispatcher.forward(request, response);
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
@@ -155,34 +165,42 @@ public class FrontServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
-
-    public String getUrl(HttpServletRequest request) {
-        String result;
-        String contextPath = request.getContextPath();
-        String url = request.getRequestURI();
-        result = url.split(contextPath)[1];
-        String query = request.getQueryString();
-        return result;
+    
+    private Object executeController(HttpServletRequest request, String url) throws Exception {
+        Object model_view = null;
+        Map<String, String[]> parameters = request.getParameterMap();
+        Class<?> controller_class = findController(url);
+        Method controller_method = findMethodController(controller_class, url);
+        Parameter[] controller_method_parameters = controller_method.getParameters();
+        Object[] controller_parameters = new Object[controller_method_parameters.length];
+        for (int i=0; i<controller_method_parameters.length; i++) {
+            Object controller_parameter = Utils.cast(parameters.get(controller_method_parameters[i].getName()), controller_method_parameters[i].getType());
+            controller_parameters[i] = controller_parameter;
+        }
+        Object controller = controller_class.newInstance();
+        set(request,controller );
+        model_view = controller_method.invoke(controller, controller_parameters);
+        return model_view;
     }
     
-    public Method getMethodFromUrl(String url) throws Exception {
-        
-        List<Class> lc = getClassList();
-        for (Class c : lc) {
-            if (c.getSimpleName().equals(getMappingUrls().get(url).getClassName())) {
-                for (Method m : c.getDeclaredMethods()) {
-                    if (m.getName().equals(getMappingUrls().get(url).getMethod())){
-                        return m;
-                    }
-                }
+    private Method findMethodController(Class<?> c, String url) throws Exception {
+        for (Method m : c.getDeclaredMethods()) {
+            if (m.getName().equals(getMappingUrls().get(url).getMethod())){
+                return m;
             }
         }
         throw new Exception("Method not found");
     }
-    public Class getClassFromUrl(String url) throws Exception {
         
-        List<Class> lc = getClassList();
-        for (Class c : lc) {
+    private Object instanceController(String url) throws Exception {
+        Class c = findController(url);
+        Object o = c.newInstance();
+        return o;
+    }
+    
+    private Class findController(String url) throws Exception {
+        List<Class<?>> lc = getListClass();
+        for (Class<?> c : lc) {
             if (c.getSimpleName().equals(getMappingUrls().get(url).getClassName())) {
                 for (Method m : c.getDeclaredMethods()) {
                     if (m.getName().equals(getMappingUrls().get(url).getMethod())){
@@ -191,41 +209,46 @@ public class FrontServlet extends HttpServlet {
                 }
             }
         }
-        throw new Exception("Class not found");
-    }
-
-    public Object set(HttpServletRequest request, Class c) throws Exception {
-
-            HashMap<String, Method> setter = Util.getSetters(c);
-            Map<String, String[]> param = request.getParameterMap();
-
-            Object temp = c.newInstance();
-//            
-            for (Map.Entry<String, String[]> entry : param.entrySet()) {
-                String key = entry.getKey();
-                String[] parameter = entry.getValue();
-                if (!setter.containsKey(key)) {
-                    continue;
-                }
-
-                Method setTemp = setter.get(key);
-                Class<?>[] setParam = setTemp.getParameterTypes();
-                setTemp.invoke(temp, (Object) Util.CastTo(parameter[0],  setParam[0]));
-            }
-            return temp;
+        throw new Exception("Controller not found");
     }
     
-    public void prepareDispatch(HttpServletRequest request, HttpServletResponse response, Object o) throws ServletException, IOException {
-         if (o instanceof ModelView) {
-                ModelView mv = (ModelView)o;
-                mv.listAll();
-                RequestDispatcher dispatcher = request.getRequestDispatcher(mv.getView());
-                for (Map.Entry<String, Object> entry : mv.getData().entrySet()) {
-                    String key = String.valueOf(entry.getKey());
-                    Object val = entry.getValue();
-                    request.setAttribute(key, val);
-                }
-                dispatcher.forward(request, response);
-            }
+    private String getURL(HttpServletRequest request) {
+        String contextPath = request.getContextPath();
+        String requestURI = request.getRequestURI();
+        return requestURI.split(contextPath)[1];
     }
+
+    public HashMap<String, Mapping> getMappingUrls() {
+        return MappingUrls;
+    }
+
+    public void setMappingUrls(HashMap<String, Mapping> MappingUrls) {
+        this.MappingUrls = MappingUrls;
+    }
+    
+    public void setMappingUrls(String path) {
+        try {
+            List<Class> lc = Utils.getClassFrom(path);
+            setMappingUrls(new HashMap<>());
+            for (Class c : lc) {
+                for (Method m : c.getDeclaredMethods()) {
+                    url u = m.getAnnotation(url.class);
+                    if (u  != null) {
+                       getMappingUrls().put(u.value() , new Mapping(c.getSimpleName(), m.getName()));
+                    }
+                }
+                getListClass().add(c);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public ArrayList<Class<?>> getListClass() {
+        return this.list_class;
+    }
+    public void setListClass(ArrayList<Class<?>> list_class) {
+        this.list_class = list_class;
+    }
+    
 }
