@@ -7,6 +7,7 @@ package etu1802.model;
 import etu1802.framework.ModelView;
 import etu1802.framework.annotation.url;
 import etu1802.framework.FileUpload;
+import etu1802.framework.annotation.auth;
 
 /**
  *
@@ -17,11 +18,14 @@ public class Emp {
     String lastname;
     String[] loisir;
     FileUpload myfiles;
+    String username;
+    String mdp;
 
     public Emp() {
         System.out.println("New Instance Emp");
     }
-
+    
+    @auth
     @url("/find-all.action")
     public ModelView findAll() {
         ModelView mv = new ModelView("list.jsp");
@@ -36,11 +40,10 @@ public class Emp {
         mv.addItem("first_name", getFirstname());
         mv.addItem("last_name", getLastname());
         mv.addItem("loisir", getLoisir());
-        //System.out.println(getMyfiles().getName());
-        //System.out.println("--->appel:" + getAppel());
         return mv;
     }
     
+    @auth("admin")
     @url("/parent.action")
     public ModelView parent(String dadname, String momname) {
         ModelView mv = new ModelView("list.jsp");
@@ -48,6 +51,32 @@ public class Emp {
         mv.addItem("last_name", momname);
         mv.addItem("loisir", getLoisir());
         return mv;
+    }
+    
+    @url("/log.action")
+    public ModelView logInput() {
+        ModelView mv = new ModelView("log.jsp");
+        return mv;
+    }
+    
+    @url("/login.action")
+    public ModelView logIn() {
+        String username = getUsername();
+        String mdp = getMdp();
+        ModelView mv = new ModelView("connected.jsp");
+        if (username.equals("admin") && mdp.equals("admin")) {
+            mv.addSession("isconnected", true);
+            mv.addSession("profile", "admin");
+            mv.addItem("user", "ADMIN");
+            return mv;
+        }
+        if (username.equals("user") && mdp.equals("user")) {
+            mv.addSession("isconnected", true);
+            mv.addSession("profile", "user");
+            mv.addItem("user", "USER");
+            return mv;
+        }
+        return new ModelView("non_connected.jsp");
     }
     
     
@@ -92,6 +121,22 @@ public class Emp {
 
     public void setMyfiles(FileUpload myfiles) {
         this.myfiles = myfiles;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public String getMdp() {
+        return mdp;
+    }
+    
+    public void setMdp(String mdp) {
+        this.mdp = mdp;
     }
     
     

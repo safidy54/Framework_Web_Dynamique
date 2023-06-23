@@ -5,10 +5,6 @@
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%
-    String first_name = String.valueOf(request.getAttribute("first_name"));    
-    String last_name = String.valueOf(request.getAttribute("last_name"));
-%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -16,10 +12,11 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Hello World!</h1>
-        <ul>
-            <li><%= first_name %></li>
-            <li><%= last_name %></li>
-        </ul>
+        <p><%= session.getAttribute("isconnected") %></p>
+        <p><%= session.getAttribute("profile") %></p>
+        <h1>Mot de passe erroné ou utilisateur inconnue</h1>
+        <a href="log.action">Retour</a>
+        <br>
+
     </body>
 </html>
