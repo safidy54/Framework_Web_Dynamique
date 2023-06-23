@@ -1,7 +1,6 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/AnnotationType.java to edit this template
  */
 package etu1802.framework.annotation;
 
@@ -12,10 +11,10 @@ import java.lang.annotation.Target;
 
 /**
  *
- * @author Safidy
+ * @author safidy
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Url {
+public @interface url {
     String value() default "";
 }
