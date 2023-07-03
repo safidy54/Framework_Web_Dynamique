@@ -1,27 +1,26 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package etu1802.framework.util;
 
-import etu1802.framework.Mapping;
 import etu1802.framework.annotation.scope;
-import etu1802.framework.annotation.url;
-import jakarta.servlet.http.Part;
 import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
+import etu1802.framework.Mapping;
+import etu1802.framework.annotation.url;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
-
 /**
  *
- * @author safidy
+ * @author Safidy
  */
 public class Utils {
 
@@ -70,9 +69,14 @@ public class Utils {
         Method setter = c.getDeclaredMethod(setter_query, f.getType());
         return setter;
     }
+
     
     public static String getSetterQuery(Field f) {
         String field_name = f.getName();
+        return getSetterQuery(field_name);
+    }
+    
+    public static String getSetterQuery(String field_name) {
         String t1 = field_name.substring(0, 1);
         String t2 = field_name.substring(1);
         t1 = t1.toUpperCase();
@@ -128,3 +132,4 @@ public class Utils {
     
     
 }
+

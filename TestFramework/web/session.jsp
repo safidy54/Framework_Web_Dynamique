@@ -1,6 +1,6 @@
 <%-- 
-    Document   : index
-    Created on : 17 avr. 2023, 22:34:16
+    Document   : session
+    Created on : 3 juil. 2023, 12:36:07
     Author     : Safidy
 --%>
 
@@ -12,6 +12,6 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Teste Model View</h1>
+        <h1> Session ok lesy<h1>
     </body>
 </html>

@@ -1,19 +1,24 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package etu1802.model;
 
-import etu1802.framework.ModelView;
-import etu1802.framework.annotation.url;
 import etu1802.framework.FileUpload;
+import etu1802.framework.ModelView;
 import etu1802.framework.annotation.auth;
+import etu1802.framework.annotation.restAPI;
+import etu1802.framework.annotation.session;
+import etu1802.framework.annotation.url;
+import java.util.HashMap;
 
 /**
  *
- * @author safidy
+ * @author Safidy
  */
 public class Emp {
+    HashMap<String, Object> session = new HashMap<>();
     String firstname;
     String lastname;
     String[] loisir;
@@ -23,6 +28,15 @@ public class Emp {
 
     public Emp() {
         System.out.println("New Instance Emp");
+    }
+    
+    @session
+    @url("/removing-session.action")
+    public ModelView removeSession(String key) {
+        ModelView mv = new ModelView("session.jsp");
+        mv.addRemovingSession("test-session");
+        System.out.println("SESSION->"+getSession());
+        return mv;
     }
     
     @auth
@@ -57,6 +71,37 @@ public class Emp {
     public ModelView logInput() {
         ModelView mv = new ModelView("log.jsp");
         return mv;
+    }
+    
+    @url("/log-out.action")
+    public ModelView logOut() {
+        ModelView mv = new ModelView("log-out.jsp");
+        mv.invalidateSession(true);
+        return mv;
+    }
+    
+    @session
+    @url("/session.action")
+    public ModelView testSession(String key, Object value) {
+        ModelView mv = new ModelView("session.jsp");
+        mv.addSession(key, value);
+        System.out.println("SESSION->"+getSession());
+        return mv;
+    }
+    
+    @url("/json.action")
+    public ModelView testJSON() {
+        ModelView mv = new ModelView();
+        mv.activeJSON();
+        mv.addItem("name", "Safidy");
+        mv.addItem("last_name", "Rabezatovo");
+        return mv;
+    }
+    
+    @restAPI
+    @url("/apirest.action")
+    public Object apiRest() {
+        return this;
     }
     
     @url("/login.action")
@@ -138,6 +183,16 @@ public class Emp {
     public void setMdp(String mdp) {
         this.mdp = mdp;
     }
+
+    public HashMap<String, Object> getSession() {
+        return session;
+    }
+
+    public void setSession(HashMap<String, Object> session) {
+        this.session = session;
+    }
+    
+    
     
     
 }

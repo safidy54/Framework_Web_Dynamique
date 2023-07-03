@@ -1,6 +1,6 @@
 <%-- 
-    Document   : index
-    Created on : 17 avr. 2023, 22:34:16
+    Document   : log-out
+    Created on : 3 juil. 2023, 12:33:03
     Author     : Safidy
 --%>
 
@@ -12,6 +12,6 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Teste Model View</h1>
+        <h1>Bravoo voues êtes déconnectée .</h1>
     </body>
 </html>
