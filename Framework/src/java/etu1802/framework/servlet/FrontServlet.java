@@ -1,38 +1,44 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package etu1802.framework.servlet;
 
+import com.google.gson.Gson;
 import etu1802.framework.FileUpload;
 import etu1802.framework.Mapping;
 import etu1802.framework.ModelView;
 import etu1802.framework.annotation.auth;
+import etu1802.framework.annotation.restAPI;
+import etu1802.framework.annotation.session;
 import etu1802.framework.annotation.url;
 import etu1802.framework.util.Utils;
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletConfig;
 import java.io.IOException;
 import java.io.PrintWriter;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
-import jakarta.servlet.http.Part;
+import java.util.HashMap;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 
 /**
  *
- * @author safidy
+ * @author Safidy
  */
 public class FrontServlet extends HttpServlet {
     private HashMap<String, Mapping> MappingUrls;
@@ -65,14 +71,40 @@ public class FrontServlet extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        try ( PrintWriter out = response.getWriter()) {
-            out.println("<h1>Servlet Frontservlet at " + request.getContextPath() + "</h1>");
-            out.println("<h1>URL at " + getURL(request) + "</h1>");
+        PrintWriter out = response.getWriter();
+        try {
             String url = getURL(request);
-            Class class_controller = findController(url);
+            Class<?> class_controller = findController(url);
             Object controller = treatSingleton(class_controller);
+            Class<?> controller_class = findController(url);
+            Method controller_method = findMethodController(controller_class, url);
+            restAPI rest = controller_method.getAnnotation(restAPI.class);
             Object model_view = executeController(request, url, controller);
-            dispatch(request, response, model_view);
+            if (rest != null) {
+                 Gson gson = new Gson();
+                String json = gson.toJson(model_view);
+                out.print(json);
+            } else {
+                if (model_view instanceof ModelView) {
+                    ModelView mv = (ModelView) model_view; 
+                    HttpSession session = request.getSession();
+                    for (String session_name : mv.getRemovingSession()) {
+                        session.removeAttribute(session_name);
+                    }
+                    if (mv.getInvalidateSession() == true) {
+                        session.invalidate();
+                    }
+                    if (mv.isJSON()) {
+                        Gson gson = new Gson();
+                        String json = gson.toJson(mv.getData());
+                        out.print(json);
+                    } else {
+                        dispatch(request, response, mv);
+                    }
+                } else {
+                    throw new Exception("La variable de retour n'est pas reconnue");
+                }
+            }
         } catch (Exception ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -84,7 +116,6 @@ public class FrontServlet extends HttpServlet {
             HttpSession session = request.getSession();
             String profile = (String) session.getAttribute(getProfile());
             boolean isConnected = (boolean) session.getAttribute(getIsConnected());
-            System.out.println(a.value() + "   <" + profile + ">  <" + getProfile() + ">  <" + getIsConnected());
             if (a.value().equals("")){
                 return isConnected;
             } else {
@@ -92,6 +123,24 @@ public class FrontServlet extends HttpServlet {
             }
         }
         return true;
+    }
+    
+    private void getAllSession(HttpServletRequest request, Object controller, Method method_controller) throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        HttpSession session = request.getSession();
+        session s = method_controller.getAnnotation(session.class);
+        if (s != null) {
+            Enumeration<String> attributeNames = session.getAttributeNames();
+            Method method_session_get = controller.getClass().getDeclaredMethod("getSession", new Class[0]);
+            Method method_session_set = controller.getClass().getDeclaredMethod("setSession", HashMap.class);
+            HashMap<String, Object> session_controller = new HashMap<String, Object>();
+            while (attributeNames.hasMoreElements()) {
+                String attributeName = attributeNames.nextElement();
+                Object attributeValue = session.getAttribute(attributeName);
+                session_controller.put(attributeName, attributeValue);
+            }
+            method_session_set.invoke(controller, session_controller);
+            System.out.println(method_session_get.invoke(controller, new Object[0]));
+        }
     }
     
     private void treatSession(HttpServletRequest request, ModelView mv) {
@@ -128,10 +177,11 @@ public class FrontServlet extends HttpServlet {
                 try {
                     FileUpload fu = new FileUpload();
                     Part filePart = getPart(request, key);
-                    fu.setName(FileUpload.getFileName(filePart));
-                    fu.setBytes(FileUpload.getBytesFromPart(filePart));
+                    fu.setName(FileUpload.getFileName((jakarta.servlet.http.Part) filePart));
+                    fu.setBytes(FileUpload.getBytesFromPart((jakarta.servlet.http.Part) filePart));
                     setter_parameter_object = fu;
                 } catch (Exception e) {
+                    e.getMessage();
                 }
             } else {
                 setter_parameter_object = Utils.cast(parameter, setter_parameter[0]);
@@ -152,6 +202,7 @@ public class FrontServlet extends HttpServlet {
                     FileUpload fu = new FileUpload();
                     setter_parameter_object = fu;
                 } catch (Exception e) {
+                    e.getMessage();
                 }
             } else {
                 setter_parameter_object = Utils.cast(parameter, setter_parameter[0]);
@@ -172,16 +223,17 @@ public class FrontServlet extends HttpServlet {
                 Class<?>[] setter_parameter = setter.getParameterTypes();
                 Object setter_parameter_object = null;
                 if (setter_parameter[0] == FileUpload.class) {
-                        FileUpload fu = new FileUpload();
-                        Part filePart = getPart(request, key);
-                        fu.setName(FileUpload.getFileName(filePart));
-                        fu.setBytes(FileUpload.getBytesFromPart(filePart));
-                        setter_parameter_object = fu;
+                    FileUpload fu = new FileUpload();
+                    Part filePart = getPart(request, key);
+                    fu.setName(FileUpload.getFileName((jakarta.servlet.http.Part) filePart));
+                    fu.setBytes(FileUpload.getBytesFromPart((jakarta.servlet.http.Part) filePart));
+                    setter_parameter_object = fu;
                 } else {
                     setter_parameter_object = Utils.cast(parameter, setter_parameter[0]);
                 }
                 setter.invoke(o, setter_parameter_object);
             } catch (Exception e) {
+                e.getMessage();
             }
         }
     }
@@ -196,27 +248,19 @@ public class FrontServlet extends HttpServlet {
         throw new Exception("¨Part don't exist");
     }
     
-    private void dispatch(HttpServletRequest request, HttpServletResponse response, Object model_view) throws Exception {
-        if (model_view instanceof ModelView modelView) {
-            try {
-                dispatch(request, response, modelView);
-                return;
-            } catch (ServletException | IOException e) {
-                throw e;
+    private void dispatch(HttpServletRequest request, HttpServletResponse response, ModelView model_view) throws Exception {
+        try {
+            RequestDispatcher dispatcher = request.getRequestDispatcher(model_view.getView());
+            treatSession(request, model_view);
+            for (Map.Entry<String, Object> entry : model_view.getData().entrySet()) {
+                String key = String.valueOf(entry.getKey());
+                Object val = entry.getValue();
+                request.setAttribute(key, val);
             }
+            dispatcher.forward(request, response);
+        } catch (ServletException | IOException e) {
+            throw e;
         }
-        throw new Exception("The controller's method must return a ModelView");
-    }
-    
-    private void dispatch(HttpServletRequest request, HttpServletResponse response, ModelView model_view) throws ServletException, IOException {
-        RequestDispatcher dispatcher = request.getRequestDispatcher(model_view.getView());
-        treatSession(request, model_view);
-        for (Map.Entry<String, Object> entry : model_view.getData().entrySet()) {
-            String key = String.valueOf(entry.getKey());
-            Object val = entry.getValue();
-            request.setAttribute(key, val);
-        }
-        dispatcher.forward(request, response);
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
@@ -273,6 +317,7 @@ public class FrontServlet extends HttpServlet {
             controller_parameters[i] = controller_parameter;
         }
         set(request,controller );
+        getAllSession(request, controller, controller_method);
         model_view = controller_method.invoke(controller, controller_parameters);
         return model_view;
     }
@@ -329,7 +374,7 @@ public class FrontServlet extends HttpServlet {
                 getListClass().add(c);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            ex.getMessage();
         }
     }
 
@@ -360,3 +405,4 @@ public class FrontServlet extends HttpServlet {
     
     
 }
+

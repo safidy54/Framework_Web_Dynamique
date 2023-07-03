@@ -16,6 +16,6 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface url {
-    String value() default "";
+public @interface session {
+    
 }
