@@ -1,28 +1,31 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
 package etu1802.framework;
 
 /**
  *
- * @author safidy
+ * @author Safidy
  */
 public class Mapping {
-    private String className;
-    private String method;
+    String className;
+    String method;
 
     public Mapping(String className, String method) {
-        this.className = className;
-        this.method = method;
+        setClassName(className);
+        setMethod(method);
     }
 
+    
+    
     public String getClassName() {
         return className;
     }
 
-    public void setClassname(String classname) {
-        this.className = classname;
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public String getMethod() {
@@ -32,6 +35,4 @@ public class Mapping {
     public void setMethod(String method) {
         this.method = method;
     }
-
 }
-

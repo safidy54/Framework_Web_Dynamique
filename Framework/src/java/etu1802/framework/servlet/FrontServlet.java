@@ -6,34 +6,27 @@
 package etu1802.framework.servlet;
 
 import etu1802.framework.Mapping;
-import etu1802.framework.annotation.url;
-import etu1802.framework.util.Utils;
+import etu1802.framework.annotation.Url;
+import etu1802.framework.utils.Util;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  *
- * @author safidy
+ * @author Safidy
  */
+@WebServlet(name = "FrontServlet", urlPatterns = {"/FrontServlet"})
 public class FrontServlet extends HttpServlet {
-
-    public HashMap<String, Mapping> mappingUrls;
-    
-    public void addMappingUrls(Class c) {
-        Method[] methods = c.getDeclaredMethods();
-        for (Method method : methods) {
-            url[] a = method.getAnnotationsByType(url.class);
-            if (a.length > 0) {
-                getMappingUrls().put(a[0].value(), new Mapping(c.getSimpleName(), method.getName()));
-            }
-        }
-    }
+    HashMap<String, Mapping> mappingUrls;
 
     public HashMap<String, Mapping> getMappingUrls() {
         return mappingUrls;
@@ -45,11 +38,11 @@ public class FrontServlet extends HttpServlet {
     
     public void setMappingUrls(String path) {
         try {
-            List<Class> lc = Utils.getClassFrom(path);
+            List<Class> lc = Util.getClassFrom(path);
             setMappingUrls(new HashMap<String, Mapping>());
             for (Class c : lc) {
                 for (Method m : c.getDeclaredMethods()) {
-                    url u = m.getAnnotation(url.class);
+                    Url u = m.getAnnotation(Url.class);
                     if (u  != null) {
                        getMappingUrls().put(u.value() , new Mapping(c.getSimpleName(), m.getName()));
                     }
@@ -60,16 +53,47 @@ public class FrontServlet extends HttpServlet {
         }
     }
     
+
     @Override
     public void init() throws ServletException {
-        super.init(); 
-        setMappingUrls("etu1802.model");
+        super.init(); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        setMappingUrls("etu2025.model");
     }
     
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        
+        try (PrintWriter out = response.getWriter()) {
+            /* TODO output your page here. You may use following sample code. */
+             List<Class> lc = Util.getClassFrom("etu1802.model");
+            /* TODO output your page here. You may use following sample code. */
+            out.println("<!DOCTYPE html>");
+            out.println("<html>");
+            out.println("<head>");
+            out.println("<title>Servlet FrontServlet</title>");            
+            out.println("</head>");
+            out.println("<body>");
+            out.println("<h1> <u>Servlet FrontServlet</u> at " + request.getContextPath() + "</h1>");
+            out.println("<h1><u>RequestURI</u> at " + request.getRequestURI()+ "</h1>");
+            out.println("<h1><u> Url </u>at " + getUrl(request) + "</h1>");
+            out.println("</body>");
+            out.println("</html>");
+            out.println(lc.size());
+            for (Class c : lc) {
+                out.println(c.getSimpleName());
+            } 
+            for (Map.Entry<String, Mapping> entry : mappingUrls.entrySet()) {
+                out.println(entry.getKey());
+                 out.println(((Mapping)entry.getValue()).getClassName());
+                 out.println(((Mapping)entry.getValue()).getMethod());
+
+            }
+            Method m = getMethodFromUrl(getUrl(request));
+            Class c = getClassFromUrl(getUrl(request));
+            m.invoke(c.newInstance(), null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
@@ -106,7 +130,7 @@ public class FrontServlet extends HttpServlet {
      *
      * @return a String containing servlet description
      */
-    @Override
+   @Override
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
@@ -117,19 +141,16 @@ public class FrontServlet extends HttpServlet {
         String url = request.getRequestURI();
         result = url.split(contextPath)[1];
         String query = request.getQueryString();
-        if (query!=null)   {
-            result = result.concat("?" + query);
-        }
         return result;
     }
     
-    public Method getMethodsUrl(String url) throws Exception {
+    public Method getMethodFromUrl(String url) throws Exception {
         
-        List<Class> lc = Utils.getClassFrom("etu1802.model");
+        List<Class> lc = Util.getClassFrom("etu1802.model");
         for (Class c : lc) {
-            if (c.getSimpleName()==getMappingUrls().get(url).getClassName()) {
+            if (c.getSimpleName().equals(getMappingUrls().get(url).getClassName())) {
                 for (Method m : c.getDeclaredMethods()) {
-                    if (m.getName()==getMappingUrls().get(url).getMethod()){
+                    if (m.getName().equals(getMappingUrls().get(url).getMethod())){
                         return m;
                     }
                 }
@@ -137,4 +158,19 @@ public class FrontServlet extends HttpServlet {
         }
         throw new Exception("Method not found");
     }
+    public Class getClassFromUrl(String url) throws Exception {
+        
+        List<Class> lc = Util.getClassFrom("etu1802.model");
+        for (Class c : lc) {
+            if (c.getSimpleName().equals(getMappingUrls().get(url).getClassName())) {
+                for (Method m : c.getDeclaredMethods()) {
+                    if (m.getName().equals(getMappingUrls().get(url).getMethod())){
+                        return c;
+                    }
+                }
+            }
+        }
+        throw new Exception("Method not found");
+    }
+
 }
