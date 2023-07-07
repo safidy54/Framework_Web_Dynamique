@@ -14,10 +14,12 @@ public class Mapping {
     String method;
 
     public Mapping(String className, String method) {
-        this.className = className;
-        this.method = method;
+        setClassName(className);
+        setMethod(method);
     }
 
+    
+    
     public String getClassName() {
         return className;
     }
@@ -33,7 +35,4 @@ public class Mapping {
     public void setMethod(String method) {
         this.method = method;
     }
-    
-    
 }
-
