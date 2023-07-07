@@ -3,18 +3,8 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/FileUpload.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/servlet/FrontServlet.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/ModelView.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/util/Utils.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/Mapping.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/annotation/scope.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/web/WEB-INF/web.xml</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/web/index.html</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/annotation/restAPI.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/annotation/url.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/annotation/auth.java</file>
-            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprintFinal/Framework/src/java/etu1802/framework/annotation/session.java</file>
+            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprint6/Framework/src/java/etu1802/framework/servlet/FrontServlet.java</file>
+            <file>file:/C:/Users/Safidy/OneDrive/Documents/NetBeansProjects/sprint6/Framework/src/java/etu1802/framework/ModelView.java</file>
         </group>
     </open-files>
 </project-private>

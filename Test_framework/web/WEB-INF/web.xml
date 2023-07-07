@@ -8,6 +8,10 @@ and open the template in the editor.
     <servlet>
         <servlet-name>FrontServlet</servlet-name>
         <servlet-class>etu1802.framework.servlet.FrontServlet</servlet-class>
+        <init-param>
+            <param-name>model-package</param-name>
+            <param-value>etu1802.model</param-value>
+        </init-param>
     </servlet>
     <servlet-mapping>
         <servlet-name>FrontServlet</servlet-name>
